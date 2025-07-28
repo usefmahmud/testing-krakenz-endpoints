@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Login & Fetch with Credentials</title>
+  </head>
+  <body>
+    <h1>Demo: Login and Fetch Protected Data</h1>
+
+    <!-- Login form -->
+    <div>
+      <label>
+        Email:
+        <input type="email" id="email" placeholder="you@example.com" />
+      </label>
+      <br />
+      <label>
+        Password:
+        <input type="text" id="password" placeholder="••••••••" />
+      </label>
+      <br />
+      <button id="loginBtn">Login</button>
+    </div>
+
+    <hr />
+
+    <!-- Fetch protected data -->
+    <div>
+      <button id="fetchDataBtn">Fetch Protected Data</button>
+    </div>
+
+    <script>
+      const loginBtn = document.getElementById("loginBtn");
+      const fetchDataBtn = document.getElementById("fetchDataBtn");
+
+      loginBtn.addEventListener("click", async () => {
+        const email = document.getElementById("email").value;
+        const password = document.getElementById("password").value;
+
+        console.log("Current origin:", window.location.origin);
+        console.log("Current URL:", window.location.href);
+
+        try {
+          const res = await fetch(
+            "https://happy-camels-search.loca.lt/auth/login",
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ email, password }),
+              // if the login endpoint sets a cookie, use credentials:
+              credentials: "include",
+            }
+          );
+
+          if (!res.ok) throw new Error(`Login failed: ${res.status}`);
+
+          const data = await res.json();
+          console.log("Login response:", data);
+          console.log(
+            "Login response headers:",
+            Object.fromEntries(res.headers.entries())
+          );
+
+          // Check critical CORS headers
+          console.log(
+            "Access-Control-Allow-Credentials:",
+            res.headers.get("Access-Control-Allow-Credentials")
+          );
+          console.log(
+            "Access-Control-Allow-Origin:",
+            res.headers.get("Access-Control-Allow-Origin")
+          );
+
+          // Check if cookies were set
+          console.log("All cookies after login:", document.cookie);
+          alert("Login successful! Check console for details.");
+        } catch (err) {
+          console.error(err);
+          alert("Login error: " + err.message);
+        }
+      });
+
+      fetchDataBtn.addEventListener("click", async () => {
+        try {
+          console.log("=== BEFORE FETCH REQUEST ===");
+          console.log("Current origin:", window.location.origin);
+          console.log("Cookies before fetch:", document.cookie);
+
+          const res = await fetch("https://happy-camels-search.loca.lt/tags", {
+            method: "GET",
+            credentials: "include", // send cookies/session
+          });
+
+          console.log("=== FETCH RESPONSE ===");
+          console.log("Response status:", res.status);
+          console.log("Response OK:", res.ok);
+          console.log(
+            "Tags response headers:",
+            Object.fromEntries(res.headers.entries())
+          );
+          console.log(
+            "Access-Control-Allow-Credentials:",
+            res.headers.get("Access-Control-Allow-Credentials")
+          );
+          console.log(
+            "Access-Control-Allow-Origin:",
+            res.headers.get("Access-Control-Allow-Origin")
+          );
+
+          if (!res.ok) {
+            const errorText = await res.text();
+            console.log("Error response body:", errorText);
+            throw new Error(`Fetch failed: ${res.status} - ${errorText}`);
+          }
+
+          const data = await res.json();
+          console.log("Protected data:", data);
+          alert("Success! Check console for details.");
+        } catch (err) {
+          console.error("Fetch error details:", err);
+          alert("Fetch error: " + err.message);
+        }
+      });
+    </script>
+  </body>
+</html>
